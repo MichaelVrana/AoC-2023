@@ -1,14 +1,55 @@
-let rec fold_lines prev func = 
+let digit_strings = [|
+    "zero";
+    "one";
+    "two";
+    "three";
+    "four";
+    "five";
+    "six";
+    "seven";
+    "eight";
+    "nine";
+    "0";
+    "1";
+    "2";
+    "3";
+    "4";
+    "5";
+    "6";
+    "7";
+    "8";
+    "9";
+|];;
+
+let digit_value digit = match digit with
+    | "zero" -> 0
+    | "one" ->  1
+    | "two" ->  2
+    | "three" ->  3
+    | "four" ->  4
+    | "five" ->  5
+    | "six" ->  6
+    | "seven" ->  7
+    | "eight" ->  8
+    | "nine" ->  9
+    | "0" -> 0
+    | "1" -> 1
+    | "2" -> 2
+    | "3" -> 3
+    | "4" -> 4
+    | "5" -> 5
+    | "6" -> 6
+    | "7" -> 7
+    | "8" -> 8
+    | "9" -> 9
+    | _ -> raise (Invalid_argument digit);;
+
+let rec fold_lines prev func =
     try
         let curr = func prev (read_line ()) in
             fold_lines curr func
     with
         End_of_file -> prev;;
-
-let is_digit char =
-    match char with    
-    | '0' .. '9' -> true
-    | _ -> false;;
 
 let first_char str =
     match str with
@@ -24,49 +65,68 @@ let last_char str =
 let str_tail str =
     let length = String.length str in
         match length with
-        | 0 -> None
-        | 1 -> None
-        | _ -> Some (String.sub str 1 (length - 1));;
+        | 0 -> ""
+        | 1 -> ""
+        | _ -> String.sub str 1 (length - 1);;
 
 let str_rtail str =
     let length = String.length str in
-        match length with
-        | 0 -> None
-        | 1 -> None
-        | _ -> Some (String.sub str 0 (length - 1));;
 
+    match length with
+    | 0 -> ""
+    | 1 -> ""
+    | _ -> String.sub str 0 (length - 1);;
 
-let rec str_find str func =
-    match first_char str with
-    | None -> None
-    | Some ch ->
-        if func ch
-            then Some ch
-            else match str_tail str with
-            | Some tail -> str_find tail func
-            | None -> None;;
+let rec str_starts_with str to_match =
+    if to_match = ""
+        then true
+    else
+        match ((first_char str), (first_char to_match)) with
+        | ((Some a), (Some b)) -> (a = b) && str_starts_with (str_tail str) (str_tail to_match)
+        | _ -> false;;
 
-let rec str_rfind str func =
-    match last_char str with
-    | None -> None
-    | Some ch ->
-        if func ch
-            then Some ch
-            else match str_rtail str with
-            | Some tail -> str_rfind tail func
-            | None -> None;;
+let rec str_ends_with str to_match =
+    if to_match = ""
+        then true
+    else
+        match ((last_char str), (last_char to_match)) with
+        | ((Some a), (Some b)) -> (a = b) && str_ends_with (str_rtail str) (str_rtail to_match)
+        | _ -> false;;
 
-let int_of_digit digit = (int_of_char digit) - 48;;
+let get_digit_from_beginning str =
+    Array.find_map (fun digit_string ->
+        if str_starts_with str digit_string
+            then Some (digit_value digit_string)
+            else None
+    ) digit_strings;;
 
-let first_digit str = str_find str is_digit;;
+let get_digit_from_end str =
+    Array.find_map (fun digit_string ->
+        if str_ends_with str digit_string
+            then Some (digit_value digit_string)
+            else None
+    ) digit_strings;;
 
-let last_digit str = str_rfind str is_digit;;
+let rec find_first_digit str = 
+    if str = "" then 0
+    else
+        match get_digit_from_beginning str with
+        | Some value -> value
+        | None -> find_first_digit (str_tail str);;
 
-let combine_digits str = match ((first_digit str), (last_digit str)) with
-    | (Some(first), Some(last)) -> int_of_string ((String.make 1 first) ^ (String.make 1 last))
-    | _ -> 0;;
+let rec find_last_digit str =
+        if str = "" then 0
+        else
+            match get_digit_from_end str with
+            | Some value -> value
+            | None -> find_last_digit (str_rtail str);;
 
-let sum_of_calibration_values = fold_lines 0 (fun acc line -> acc + (combine_digits line));;
+let calibration_value str =
+    let first_digit = find_first_digit str in
+    let last_digit = find_last_digit str in
+    first_digit * 10 + last_digit;;
+
+let sum_of_calibration_values = fold_lines 0 (fun acc line -> acc + (calibration_value line));;
 
 print_int sum_of_calibration_values;;
 print_newline ();;
