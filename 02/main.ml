@@ -127,21 +127,18 @@ let parse_line str =
     let cubes = parse_cubes str in
     (game_id, cubes)
 
-let red_count = 12
-let green_count = 13
-let blue_count = 14
+let power_set =
+    List.fold_left (fun (red, green, blue) cube ->
+            match cube with
+            | Red(count) -> ((max red count), green, blue)
+            | Green(count) -> (red, (max green count), blue)
+            | Blue(count) -> (red, green, (max blue count))
+            ) (0, 0, 0)
 
 let answer = fold_lines (fun acc line ->
-    let game_id, cubes = parse_line line in
-    let all_cubes_satisfy = List.for_all (fun cube ->
-        match cube with
-        | Red(count) -> count <= red_count
-        | Green(count) -> count <= green_count
-        | Blue(count) -> count <= blue_count
-    ) cubes in
-
-    if all_cubes_satisfy then acc + game_id
-    else acc
+    let _, cubes = parse_line line in
+    let red_max, green_max, blue_max = power_set cubes in
+    red_max * green_max * blue_max + acc
 ) 0
             
 let () = print_endline (string_of_int answer)
